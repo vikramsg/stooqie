@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pandas[pyarrow]>=2.2.3",
+    "requests>=2.32.3",
 ]
 
 [dependency-groups]
@@ -16,7 +17,7 @@ dev = [
 
 [tool.ruff]
 # Same as Black.
-line-length = 60
+line-length = 120
 indent-width = 4
 
 # Assume Python 3.10
