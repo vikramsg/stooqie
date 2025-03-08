@@ -43,7 +43,8 @@ exclude = []
 fixable = ["ALL"]
 unfixable = []
 
-[tool.ruff.format]
+[tool.pyright]
+strict = true
 # Like Black, use double quotes for strings.
 quote-style = "double"
 
