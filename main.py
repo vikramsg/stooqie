@@ -1,26 +1,20 @@
-import pandas as pd
-import requests
 from io import StringIO
 
-
-def main():
-    ticker = "AAPL"  # Example ticker
-    df = get_historical_data(ticker)
-    print(df)
+import pandas as pd
+import requests
 
 
-def get_historical_data(ticker):
+def get_historical_data(ticker) -> pd.DataFrame:
     """
     Fetch historical stock data for a given ticker from Stooq and return it as a DataFrame.
     """
     url = f"https://stooq.com/q/d/l/?s={ticker}&i=d"
     response = requests.get(url)
-    if response.status_code == 200:
-        csv_data = StringIO(response.text)
-        df = pd.read_csv(csv_data)
-        return df
-    else:
-        print(f"Failed to fetch data for {ticker}")
-        return None
+    csv_data = StringIO(response.text)
+    df = pd.read_csv(csv_data)
+    return df
 
-    main()
+if __name__ == "__main__":
+    ticker = "AAPL"
+    df = get_historical_data(ticker)
+    print(df.head())
