@@ -1,24 +1,25 @@
-from textual.app import App
-from textual.widgets import Plot
+from textual.app import App, ComposeResult
+from textual_plotext import PlotextPlot
 
+from stooqie.models import TickerColumns
 from stooqie.ticker import historical_change_from_ticker
 
 
 class StockPlotApp(App):  # type: ignore
+    def compose(self) -> ComposeResult:
+        yield PlotextPlot()
+
     async def on_mount(self) -> None:
-        # Create a Plot widget
-        plot = Plot()
+        plt = self.query_one(PlotextPlot).plt
 
         # Fetch historical data for a given ticker
         ticker = "AAPL.US"
         df = historical_change_from_ticker(ticker)
 
         # Add data to the plot
-        plot.add_series("Closing Prices", df["date"], df["close"])
-
-        # Add the plot to the app
-        await self.view.dock(plot, edge="top")
+        plt.plot(df[TickerColumns.date], df[TickerColumns.close])
+        plt.title("Ticker plot")
 
 
 if __name__ == "__main__":
-    StockPlotApp.run()  # type: ignore
+    StockPlotApp().run()  # type: ignore
