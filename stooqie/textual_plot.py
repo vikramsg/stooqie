@@ -16,6 +16,9 @@ class StockPlotApp(App):  # type: ignore
         ticker = "AAPL.US"
         df = historical_change_from_ticker(ticker)
 
+        # Format the date column to the expected format
+        df[TickerColumns.date] = df[TickerColumns.date].dt.strftime("%d/%m/%Y")
+
         # Add data to the plot
         plt.plot(df[TickerColumns.date], df[TickerColumns.close])
         plt.title("Ticker plot")
