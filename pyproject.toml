@@ -43,8 +43,7 @@ exclude = []
 fixable = ["ALL"]
 unfixable = []
 
-[tool.pyright]
-strict = true
+[tool.ruff.format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
 
@@ -56,3 +55,9 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[tool.pyright]
+typeCheckingMode = "standard" 
+reportMissingTypeArgument = "error"
+reportUnknownParameterType = "error"
+reportMissingParameterType = "error"
