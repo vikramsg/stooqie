@@ -7,6 +7,8 @@ requires-python = ">=3.13"
 dependencies = [
     "pandas[pyarrow]>=2.2.3",
     "requests>=2.32.3",
+    "textual>=2.1.2",
+    "textual-plotext>=1.0.1",
 ]
 
 [dependency-groups]

@@ -1,3 +1,4 @@
+import pandas as pd
 from textual.app import App, ComposeResult
 from textual_plotext import PlotextPlot
 
@@ -17,10 +18,10 @@ class StockPlotApp(App):  # type: ignore
         df = historical_change_from_ticker(ticker)
 
         # Format the date column to the expected format
-        df[TickerColumns.date] = df[TickerColumns.date].dt.strftime("%d/%m/%Y")
+        df_dt = pd.to_datetime(df[TickerColumns.date]).dt.strftime("%d/%m/%Y")
 
         # Add data to the plot
-        plt.plot(df[TickerColumns.date], df[TickerColumns.close])
+        plt.plot(df_dt, df[TickerColumns.close])
         plt.title("Ticker plot")
 
 

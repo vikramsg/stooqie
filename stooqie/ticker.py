@@ -1,7 +1,9 @@
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from io import StringIO
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,6 +12,7 @@ import requests
 from stooqie.models import TickerColumns
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s")
+logger = logging.getLogger()
 
 
 @dataclass
@@ -109,6 +112,23 @@ def historical_change_from_ticker(ticker: str) -> pd.DataFrame:
     historical_change_df: pd.DataFrame = _historical_change_df[
         [column for column in TickerColumns] + [column.column_name for column in HistoricalOffsetColumns]
     ]
+
+    return historical_change_df
+
+
+def get_ticker_df(ticker: str, *, invalidation_ttl: int, parquet_path: Path) -> pd.DataFrame:
+    stored_df = pd.read_parquet(parquet_path)
+    historical_change_df = stored_df.loc[stored_df["ticker"] == ticker]
+
+    latest_date = pd.to_datetime(historical_change_df[TickerColumns.date]).max()
+    # If date is too old, then fetch
+    if abs((latest_date - datetime.now()).days) > invalidation_ttl:
+        historical_change_df = historical_change_from_ticker(ticker)
+
+        historical_change_df["ticker"] = ticker
+        logger.debug("Ticker %s cache is too old. Fetching...", ticker)
+
+    logger.info("Ticker %s contains %s rows.", ticker, len(historical_change_df))
 
     return historical_change_df
 
