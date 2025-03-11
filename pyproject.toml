@@ -1,7 +1,7 @@
 [project]
-name = "stooq"
+name = "stooqie"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python tool to look at Stocks."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -16,13 +16,19 @@ dev = [
     "ruff>=0.9.10",
 ]
 
+[project.scripts]
+stooqie = "stooqie.cli:cli"
+
+[tool.uv]
+package = true
+
+[tool.setuptools]
+packages = ["stooqie"]
 
 [tool.ruff]
-# Same as Black.
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.10
 target-version = "py313"
 
 [tool.ruff.lint]

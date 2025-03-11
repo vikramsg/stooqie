@@ -287,9 +287,9 @@ wheels = [
 ]
 
 [[package]]
-name = "stooq"
+name = "stooqie"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "pandas", extra = ["pyarrow"] },
     { name = "requests" },

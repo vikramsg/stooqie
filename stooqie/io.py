@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from stooqie._ticker import historical_change_from_ticker
 from stooqie.models import TickerColumns, settings
-from stooqie.ticker import historical_change_from_ticker
 from stooqie.utils.log import logger
 
 
