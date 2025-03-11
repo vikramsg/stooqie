@@ -9,8 +9,6 @@ from stooqie.utils.log import logger
 def main() -> None:
     """
     This is for downloading all ticker data. Eventually this will probably be a CRON job.
-
-    Right now this and get_ticker_df are doing very similar jobs.
     """
     settings = Settings()
 

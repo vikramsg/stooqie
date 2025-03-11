@@ -75,12 +75,12 @@ class StockPlotApp(App):  # type: ignore
 
     @on(ticker_select.Changed)
     async def ticker_changed(self) -> None:
-        await self.update_table(self.ticker_select.value)
-        await self.update_plot(self.ticker_select.value, self.duration_select.value)
+        await self.update_table(self.ticker_select.value)  # type: ignore
+        await self.update_plot(self.ticker_select.value, self.duration_select.value)  # type: ignore
 
     @on(duration_select.Changed)
     async def duration_changed(self) -> None:
-        await self.update_plot(self.ticker_select.value, self.duration_select.value)
+        await self.update_plot(self.ticker_select.value, self.duration_select.value)  # type: ignore
 
     async def update_plot(self, ticker: str, duration: str) -> None:
         """Updates only the plot based on the selected duration."""
