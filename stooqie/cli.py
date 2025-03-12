@@ -24,7 +24,6 @@ def stock_app(csv_file_path: Path | None = None) -> None:
         assert csv_file_path.exists(), "Input file path does not exist."
     settings = Settings() if csv_file_path is None else Settings(stock_ticker_path=csv_file_path)
 
-    # This is really, really slow!
     update_historical_tickers(settings=settings)
     tickers_for_dashboard = [(ticker.display_name, ticker.ticker_name) for ticker in settings.stock_tickers.values()]
 

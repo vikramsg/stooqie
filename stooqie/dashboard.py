@@ -88,7 +88,7 @@ class StockPlotApp(App):  # type: ignore
         duration_years = None
         # This weird check is done because on.changed for duration_select runs
         # even if we don't change it!
-        with contextlib.suppress(TypeError):
+        with contextlib.suppress(TypeError, ValueError):
             duration_years = int(duration)
 
         # Apply duration filter
