@@ -9,7 +9,7 @@ from textual.widgets import DataTable, Footer, Label, Select
 from textual_plotext import PlotextPlot
 
 from stooqie.io import get_ticker_df
-from stooqie.models import TickerColumns, Tickers, settings
+from stooqie.models import TickerColumns, settings
 
 
 class StockPlotApp(App):  # type: ignore
@@ -39,11 +39,10 @@ class StockPlotApp(App):  # type: ignore
     BINDINGS = [Binding(key="q", action="quit", description="Quit the app")]
 
     _select_tickers: Sequence[tuple[str, str]] = [
-        (ticker.display_name, ticker.ticker_name) for ticker in settings.tickers_to_track
+        (ticker.display_name, ticker.ticker_name) for _, ticker in settings.stock_tickers.items()
     ]
 
-    _default_ticker: str = Tickers.apple.ticker_name
-    ticker_select = Select(_select_tickers, prompt="Select a ticker:", value=_default_ticker)
+    ticker_select = Select(_select_tickers, prompt="Select a ticker:")
 
     _select_durations: Sequence[tuple[str, str]] = [
         ("Max", "max"),
@@ -70,8 +69,6 @@ class StockPlotApp(App):  # type: ignore
 
     async def on_mount(self) -> None:
         self.data_table.add_columns("Ticker", "1 Year Diff", "2 Year Diff", "5 Year Diff", "Max Diff")
-        await self.update_table(self._default_ticker)
-        await self.update_plot(self._default_ticker, self._default_duration)
 
     @on(ticker_select.Changed)
     async def ticker_changed(self) -> None:

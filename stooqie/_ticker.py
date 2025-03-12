@@ -110,6 +110,7 @@ def historical_change_from_ticker(ticker: str) -> pd.DataFrame:
     historical_change_df: pd.DataFrame = _historical_change_df[  # type: ignore
         [column for column in TickerColumns] + [column.column_name for column in HistoricalOffsetColumns]
     ]
+    historical_change_df["ticker"] = ticker
 
     return historical_change_df
 

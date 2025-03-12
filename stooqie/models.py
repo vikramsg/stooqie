@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, StrEnum
 from pathlib import Path
 
@@ -58,11 +58,17 @@ class StockTickers:
 
 @dataclass(frozen=True)
 class Settings:
+    # Location of parquet where we store post processed ticker data.
     parquet_path: Path = Path("./data/ticker.parquet")
+    # How stale can the parquet data be before we redownload.
+    parquet_invalidation_ttl: int = 5
 
     stock_ticker_path: Path = Path("./data/stock_tickers.csv")
 
-    stock_tickers: dict[str, Ticker] = field(default_factory=lambda: StockTickers.from_csv(csv_path=Settings.stock_ticker_path).tickers)
+    # frozen=true restricts us from creating mutable data structures so need default factory.
+    stock_tickers: dict[str, Ticker] = field(
+        default_factory=lambda: StockTickers.from_csv(csv_path=Settings.stock_ticker_path).tickers
+    )
 
 
 settings = Settings()
