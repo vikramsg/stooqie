@@ -1,9 +1,10 @@
-from collections.abc import Sequence
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from pathlib import Path
 
-from pydantic import RootModel
+import pandas as pd
 
 
 class TickerColumns(StrEnum):
@@ -32,15 +33,36 @@ class Tickers(Ticker, Enum):
     microsoft = ("Microsoft", "MSFT.US")
 
 
-class StockTickers(RootModel):
-    root: list[Ticker]
+@dataclass
+class StockTickers:
+    """
+    We want a dict that has key as the lower case name and value as Ticker.
+    We want to read this from a csv file.
+    """
+
+    tickers: dict[str, Ticker]
+
+    @staticmethod
+    def from_csv(csv_path: Path) -> StockTickers:
+        ticker_df = pd.read_csv(csv_path).drop_duplicates()
+
+        assert len(ticker_df) > 0, "Ticker CSV file is empty."
+
+        tickers: dict[str, Ticker] = {}
+        for _, row in ticker_df.iterrows():
+            name = row["display_name"].lower()  # type: ignore
+            tickers[name] = Ticker(display_name=row["display_name"], ticker_name=row["ticker_name"])  # type:ignore
+
+        return StockTickers(tickers=tickers)
 
 
 @dataclass(frozen=True)
 class Settings:
     parquet_path: Path = Path("./data/ticker.parquet")
 
-    tickers_to_track: Sequence[Ticker] = tuple([ticker for ticker in Tickers])
+    stock_ticker_path: Path = Path("./data/stock_tickers.csv")
+
+    stock_tickers: dict[str, Ticker] = StockTickers.from_csv(csv_path=stock_ticker_path).tickers
 
 
 settings = Settings()
