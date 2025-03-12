@@ -62,7 +62,7 @@ class Settings:
 
     stock_ticker_path: Path = Path("./data/stock_tickers.csv")
 
-    stock_tickers: dict[str, Ticker] = StockTickers.from_csv(csv_path=stock_ticker_path).tickers
+    stock_tickers: dict[str, Ticker] = field(default_factory=lambda: StockTickers.from_csv(csv_path=Settings.stock_ticker_path).tickers)
 
 
 settings = Settings()
