@@ -4,14 +4,10 @@ from stooqie.models import Settings
 from stooqie.utils.log import logger
 
 
-def main() -> None:
+def update_historical_tickers(settings: Settings) -> None:
     """
     This is for downloading all ticker data. Eventually this will probably be a CRON job.
-
-    TODO: Need to bring back caching and length logic
     """
-    settings = Settings()
-
     logger.info("Starting the application")
     tickers = [ticker.ticker_name for _, ticker in settings.stock_tickers.items()]
 
@@ -21,9 +17,5 @@ def main() -> None:
 
 
 def cli() -> None:
-    main()
+    update_historical_tickers(settings=Settings())
     StockPlotApp().run()
-
-
-if __name__ == "__main__":
-    main()
