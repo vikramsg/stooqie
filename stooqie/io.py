@@ -57,6 +57,7 @@ def write_historical_tickers(tickers: list[str], *, parquet_path: Path, parquet_
             ticker_df = historical_change_from_ticker(ticker)
 
         all_tickers.append(ticker_df)
+        logger.debug(f"This loop is really, really slow: {ticker}")
 
     tickers_df = pd.concat(all_tickers).drop_duplicates()
 

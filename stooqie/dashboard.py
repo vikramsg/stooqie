@@ -4,13 +4,13 @@ from collections.abc import Sequence
 import pandas as pd
 from textual import on
 from textual.app import App, ComposeResult
-from textual.binding import Binding
+from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Label, Select
 from textual_plotext import PlotextPlot
 
 from stooqie.io import get_ticker_df
-from stooqie.models import TickerColumns, settings
+from stooqie.models import TickerColumns
 
 
 class StockPlotApp(App):  # type: ignore
@@ -37,22 +37,22 @@ class StockPlotApp(App):  # type: ignore
     }
     """  # Without height: auto widgets try to occupy too much space
 
-    BINDINGS = [Binding(key="q", action="quit", description="Quit the app")]
+    BINDINGS: list[BindingType] = [Binding(key="q", action="quit", description="Quit the app")]
 
-    _select_tickers: Sequence[tuple[str, str]] = [
-        (ticker.display_name, ticker.ticker_name) for _, ticker in settings.stock_tickers.items()
-    ]
-    _default_ticker = _select_tickers[0][1]
-    ticker_select = Select(_select_tickers, prompt="Select a ticker:")
+    def __init__(self, tickers: list[tuple[str, str]]):
+        super().__init__()
 
-    _select_durations: Sequence[tuple[str, str]] = [
-        ("Max", "max"),
-        ("1 Year", "1"),
-        ("2 Years", "2"),
-        ("5 Years", "5"),
-    ]
-    _default_duration: str = "max"
-    duration_select = Select(_select_durations, prompt="Select duration:")
+        # ID is important. Otherwise if we use `@on(ticker_select.changed)`, Python will not know
+        # what ticker_select is since we are defining it within __init__
+        self.ticker_select = Select(tickers, prompt="Select a ticker:", id="select_ticker")
+
+        _select_durations: Sequence[tuple[str, str]] = [
+            ("Max", "max"),
+            ("1 Year", "1"),
+            ("2 Years", "2"),
+            ("5 Years", "5"),
+        ]
+        self.duration_select = Select(_select_durations, prompt="Select duration:", id="duration_ticker")
 
     def compose(self) -> ComposeResult:
         self.plot = PlotextPlot()
@@ -71,12 +71,12 @@ class StockPlotApp(App):  # type: ignore
     async def on_mount(self) -> None:
         self.data_table.add_columns("Ticker", "1 Year Diff", "2 Year Diff", "5 Year Diff", "Max Diff")
 
-    @on(ticker_select.Changed)
+    @on(Select.Changed, "#select_ticker")
     async def ticker_changed(self) -> None:
         await self.update_table(self.ticker_select.value)  # type: ignore
         await self.update_plot(self.ticker_select.value)  # type: ignore
 
-    @on(duration_select.Changed)
+    @on(Select.Changed, "#duration_ticker")
     async def duration_changed(self) -> None:
         await self.update_plot(self.ticker_select.value, self.duration_select.value)  # type: ignore
 
