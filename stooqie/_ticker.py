@@ -107,9 +107,10 @@ def historical_change_from_ticker(ticker: str) -> pd.DataFrame:
         _historical_change_df[column.column_name] = joined_df[f"{TickerColumns.close}_right"]
 
     # Retain only the columns we want to have
-    historical_change_df: pd.DataFrame = _historical_change_df[
+    historical_change_df: pd.DataFrame = _historical_change_df[  # type: ignore
         [column for column in TickerColumns] + [column.column_name for column in HistoricalOffsetColumns]
     ]
+    historical_change_df["ticker"] = ticker
 
     return historical_change_df
 

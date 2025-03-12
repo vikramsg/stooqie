@@ -8,21 +8,10 @@ from stooqie.models import TickerColumns, settings
 from stooqie.utils.log import logger
 
 
-def _get_historical_change_df_from_stooq(ticker: str) -> pd.DataFrame:
-    historical_change_df = historical_change_from_ticker(ticker)
-
-    historical_change_df["ticker"] = ticker
-
-    return historical_change_df
-
-
-def get_ticker_df(
-    ticker: str, *, invalidation_ttl: int = settings.invalidation_ttl, parquet_path: Path = settings.parquet_path
-) -> pd.DataFrame:
+def get_ticker_df(ticker: str, *, parquet_path: Path = settings.parquet_path) -> pd.DataFrame:
     """
-    This function returns the dataframe for the ticker. By default we only want to read the dataframe from parquet.
-    However, the parquet may not always have the correct data.
-    The cases where it must intervene is when the ticker data is empty or outdated.
+    This function returns the dataframe for the ticker by reading the parquet.
+    It assumes that the parquet always HAS data and HAS fresh data.
 
     Args:
         ticker: Name of the ticker
@@ -33,19 +22,43 @@ def get_ticker_df(
     stored_df = pd.read_parquet(parquet_path)
     historical_change_df = stored_df.loc[stored_df["ticker"] == ticker]
 
-    if len(historical_change_df) == 0:
-        ticker_df = _get_historical_change_df_from_stooq(ticker)
-        to_store_df = pd.concat([stored_df, ticker_df])
-        to_store_df.to_parquet(settings.parquet_path)
-
-        return ticker_df
-
-    latest_date = pd.to_datetime(historical_change_df[TickerColumns.date]).max()
-    # If date is too old, then fetch
-    if abs((latest_date - datetime.now()).days) > invalidation_ttl:
-        historical_change_df = _get_historical_change_df_from_stooq(ticker)
-        logger.debug("Ticker %s cache is too old. Fetching...", ticker)
-
-        # TODO: Also need to update the stored parquet. But should we do that here?
-
     return historical_change_df
+
+
+def write_historical_tickers(tickers: list[str], *, parquet_path: Path, parquet_invalidation_ttl: int) -> None:
+    """
+    Write the parquet to parquet_path. By default we will just read the parquet for each ticker and write back.
+    The 2 conditions where this is not done and instead we download data and write are
+        1. If the ticker data is empty.
+        2. If the ticker data is too old.
+
+    Args:
+        tickers: All tickers to write data for.
+        parquet_path: Path of parquet file. We both read and write to the same file.
+        parquet_invalidation_ttl: How old can the data be for a ticker before we redownload.
+    """
+    # Handle file not existing
+    if not parquet_path.exists():
+        tickers_df = pd.concat([historical_change_from_ticker(ticker) for ticker in tickers]).drop_duplicates()
+        tickers_df.to_parquet(parquet_path)
+        return
+
+    # Now handle cases where file exists
+    all_tickers = []
+    for ticker in tickers:
+        # Also handle parquet not existing.
+        ticker_df = get_ticker_df(ticker, parquet_path=parquet_path)
+
+        latest_data_date = pd.to_datetime(ticker_df[TickerColumns.date]).max()
+        if abs((latest_data_date - datetime.now()).days) > parquet_invalidation_ttl:
+            ticker_df = historical_change_from_ticker(ticker)
+
+        if len(ticker_df) == 0:
+            ticker_df = historical_change_from_ticker(ticker)
+
+        all_tickers.append(ticker_df)
+
+    tickers_df = pd.concat(all_tickers).drop_duplicates()
+
+    logger.debug(f"Writing post processed ticker data to parquet at {parquet_path}.")
+    tickers_df.to_parquet(parquet_path)

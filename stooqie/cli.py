@@ -1,35 +1,21 @@
-import pandas as pd
-
 from stooqie.dashboard import StockPlotApp
-from stooqie.io import get_ticker_df
+from stooqie.io import write_historical_tickers
 from stooqie.models import Settings
 from stooqie.utils.log import logger
 
 
-def main() -> None:
+def update_historical_tickers(settings: Settings) -> None:
     """
     This is for downloading all ticker data. Eventually this will probably be a CRON job.
-
-    Right now this and get_ticker_df are doing very similar jobs.
     """
-    settings = Settings()
-
     logger.info("Starting the application")
-    tickers = [ticker.ticker_name for ticker in settings.tickers_to_track]
+    tickers = [ticker.ticker_name for _, ticker in settings.stock_tickers.items()]
 
-    ticker_dfs = []
-    for ticker in tickers:
-        historical_change_df = get_ticker_df(ticker)
-        ticker_dfs.append(historical_change_df)
-
-    ticker_df = pd.concat(ticker_dfs)
-    ticker_df.to_parquet(settings.parquet_path)
+    write_historical_tickers(
+        tickers, parquet_path=settings.parquet_path, parquet_invalidation_ttl=settings.parquet_invalidation_ttl
+    )
 
 
 def cli() -> None:
-    main()
+    update_historical_tickers(settings=Settings())
     StockPlotApp().run()
-
-
-if __name__ == "__main__":
-    main()

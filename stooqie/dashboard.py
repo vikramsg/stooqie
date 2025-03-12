@@ -1,3 +1,4 @@
+import contextlib
 from collections.abc import Sequence
 
 import pandas as pd
@@ -9,7 +10,7 @@ from textual.widgets import DataTable, Footer, Label, Select
 from textual_plotext import PlotextPlot
 
 from stooqie.io import get_ticker_df
-from stooqie.models import TickerColumns, Tickers, settings
+from stooqie.models import TickerColumns, settings
 
 
 class StockPlotApp(App):  # type: ignore
@@ -39,11 +40,10 @@ class StockPlotApp(App):  # type: ignore
     BINDINGS = [Binding(key="q", action="quit", description="Quit the app")]
 
     _select_tickers: Sequence[tuple[str, str]] = [
-        (ticker.display_name, ticker.ticker_name) for ticker in settings.tickers_to_track
+        (ticker.display_name, ticker.ticker_name) for _, ticker in settings.stock_tickers.items()
     ]
-
-    _default_ticker: str = Tickers.apple.ticker_name
-    ticker_select = Select(_select_tickers, prompt="Select a ticker:", value=_default_ticker)
+    _default_ticker = _select_tickers[0][1]
+    ticker_select = Select(_select_tickers, prompt="Select a ticker:")
 
     _select_durations: Sequence[tuple[str, str]] = [
         ("Max", "max"),
@@ -52,7 +52,7 @@ class StockPlotApp(App):  # type: ignore
         ("5 Years", "5"),
     ]
     _default_duration: str = "max"
-    duration_select = Select(_select_durations, prompt="Select duration:", value=_default_duration)
+    duration_select = Select(_select_durations, prompt="Select duration:")
 
     def compose(self) -> ComposeResult:
         self.plot = PlotextPlot()
@@ -70,27 +70,30 @@ class StockPlotApp(App):  # type: ignore
 
     async def on_mount(self) -> None:
         self.data_table.add_columns("Ticker", "1 Year Diff", "2 Year Diff", "5 Year Diff", "Max Diff")
-        await self.update_table(self._default_ticker)
-        await self.update_plot(self._default_ticker, self._default_duration)
 
     @on(ticker_select.Changed)
     async def ticker_changed(self) -> None:
-        await self.update_table(self.ticker_select.value)
-        await self.update_plot(self.ticker_select.value, self.duration_select.value)
+        await self.update_table(self.ticker_select.value)  # type: ignore
+        await self.update_plot(self.ticker_select.value)  # type: ignore
 
     @on(duration_select.Changed)
     async def duration_changed(self) -> None:
-        await self.update_plot(self.ticker_select.value, self.duration_select.value)
+        await self.update_plot(self.ticker_select.value, self.duration_select.value)  # type: ignore
 
-    async def update_plot(self, ticker: str, duration: str) -> None:
+    async def update_plot(self, ticker: str, duration: str | int = 5) -> None:
         """Updates only the plot based on the selected duration."""
         df = get_ticker_df(ticker)
         df[TickerColumns.date] = pd.to_datetime(df[TickerColumns.date]).dt.strftime("%d/%m/%Y")
 
+        duration_years = None
+        # This weird check is done because on.changed for duration_select runs
+        # even if we don't change it!
+        with contextlib.suppress(TypeError):
+            duration_years = int(duration)
+
         # Apply duration filter
-        if duration != "max":
-            years = int(duration)
-            df = df.tail(years * 252)  # Approximate trading days per year
+        if duration_years:
+            df = df.tail(duration_years * 252)  # Approximate trading days per year
 
         plt = self.plot.plt
         plt.clf()

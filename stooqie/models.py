@@ -1,7 +1,10 @@
-from collections.abc import Sequence
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from enum import Enum, StrEnum
 from pathlib import Path
+
+import pandas as pd
 
 
 class TickerColumns(StrEnum):
@@ -30,15 +33,42 @@ class Tickers(Ticker, Enum):
     microsoft = ("Microsoft", "MSFT.US")
 
 
+@dataclass
+class StockTickers:
+    """
+    We want a dict that has key as the lower case name and value as Ticker.
+    We want to read this from a csv file.
+    """
+
+    tickers: dict[str, Ticker]
+
+    @staticmethod
+    def from_csv(csv_path: Path) -> StockTickers:
+        ticker_df = pd.read_csv(csv_path).drop_duplicates()
+
+        assert len(ticker_df) > 0, "Ticker CSV file is empty."
+
+        tickers: dict[str, Ticker] = {}
+        for _, row in ticker_df.iterrows():
+            name = row["display_name"].lower()  # type: ignore
+            tickers[name] = Ticker(display_name=row["display_name"], ticker_name=row["ticker_name"])  # type:ignore
+
+        return StockTickers(tickers=tickers)
+
+
 @dataclass(frozen=True)
 class Settings:
-    # If a parquet already contains data for a particular stock that is no more
-    # than the following number of days old, use that and don't download
-    invalidation_ttl: int = 5
-
+    # Location of parquet where we store post processed ticker data.
     parquet_path: Path = Path("./data/ticker.parquet")
+    # How stale can the parquet data be before we redownload.
+    parquet_invalidation_ttl: int = 5
 
-    tickers_to_track: Sequence[Ticker] = tuple([ticker for ticker in Tickers])
+    stock_ticker_path: Path = Path("./data/stock_tickers.csv")
+
+    # frozen=true restricts us from creating mutable data structures so need default factory.
+    stock_tickers: dict[str, Ticker] = field(
+        default_factory=lambda: StockTickers.from_csv(csv_path=Settings.stock_ticker_path).tickers
+    )
 
 
 settings = Settings()
