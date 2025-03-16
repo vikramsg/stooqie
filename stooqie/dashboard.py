@@ -111,8 +111,8 @@ class StockPlotApp(App):  # type: ignore
         self.data_table.clear()
 
         df["1Y Change"] = df[TickerColumns.close] - df["offset_one"]
-        df["2Y Change"] = df[TickerColumns.close] - df["offset_five"]
-        df["5Y Change"] = df[TickerColumns.close] - df["offset_ten"]
+        df["2Y Change"] = df[TickerColumns.close] - df["offset_two"]
+        df["5Y Change"] = df[TickerColumns.close] - df["offset_five"]
         df["Max Change"] = df[TickerColumns.close] - df.loc[0, TickerColumns.close]
 
         latest_row = df.iloc[-1]
