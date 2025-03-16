@@ -3,7 +3,7 @@ from pathlib import Path
 
 from stooqie.dashboard import StockPlotApp
 from stooqie.io import write_historical_tickers
-from stooqie.models import Settings
+from stooqie.models import Settings, settings
 from stooqie.utils.log import logger
 
 
@@ -30,6 +30,10 @@ def stock_app(csv_file_path: Path | None = None) -> None:
     StockPlotApp(tickers=tickers_for_dashboard).run()
 
 
+def clean_state(state_path: Path) -> None:
+    state_path.unlink()
+
+
 def cli() -> None:
     argparser = ArgumentParser(prog="stooqie")
     argparser.add_argument(
@@ -40,5 +44,13 @@ def cli() -> None:
         help="CSV file to read Tickers from. Must have only 2 columns, `display_name` and `ticker_name`",
     )
 
+    subparsers = argparser.add_subparsers(dest="command")
+    subparsers.add_parser("clean", help="Clean state files if any. Using stooqie again will trigger redownloads.")
+
     args = argparser.parse_args()
-    stock_app(csv_file_path=args.from_csv_file)
+
+    match args.command:
+        case "clean":
+            clean_state(settings.parquet_path)
+        case _:
+            stock_app(csv_file_path=args.from_csv_file)
