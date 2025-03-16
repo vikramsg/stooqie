@@ -52,7 +52,10 @@ class StockPlotApp(App):  # type: ignore
             ("2 Years", "2"),
             ("5 Years", "5"),
         ]
-        self.duration_select = Select(_select_durations, prompt="Select duration:", id="duration_ticker")
+        _duration_default_value = "5"
+        self.duration_select = Select(
+            _select_durations, prompt="Select duration:", id="duration_ticker", value=_duration_default_value
+        )
 
     def compose(self) -> ComposeResult:
         self.plot = PlotextPlot()
@@ -74,13 +77,13 @@ class StockPlotApp(App):  # type: ignore
     @on(Select.Changed, "#select_ticker")
     async def ticker_changed(self) -> None:
         await self.update_table(self.ticker_select.value)  # type: ignore
-        await self.update_plot(self.ticker_select.value)  # type: ignore
+        await self.update_plot(self.ticker_select.value, self.duration_select.value)  # type: ignore
 
     @on(Select.Changed, "#duration_ticker")
     async def duration_changed(self) -> None:
         await self.update_plot(self.ticker_select.value, self.duration_select.value)  # type: ignore
 
-    async def update_plot(self, ticker: str, duration: str | int = 5) -> None:
+    async def update_plot(self, ticker: str, duration: str | int) -> None:
         """Updates only the plot based on the selected duration."""
         df = get_ticker_df(ticker)
         df[TickerColumns.date] = pd.to_datetime(df[TickerColumns.date]).dt.strftime("%d/%m/%Y")
