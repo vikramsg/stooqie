@@ -18,7 +18,7 @@ def _bump_df_filtered_by_bump_factor(
 ) -> pd.DataFrame:
     filter_df = bump_df.copy()
 
-    filter_df[BumpColumns.bump] = filter_df[TickerColumns.close] / filter_df[offset_column] - 1
+    filter_df[BumpColumns.bump] = filter_df[TickerColumns.close] / filter_df[offset_column]
     filter_df[BumpColumns.origin_date] = pd.to_datetime(filter_df[TickerColumns.date]) - pd.DateOffset(
         years=offset_years
     )
@@ -29,11 +29,11 @@ def _bump_df_filtered_by_bump_factor(
     return filter_df[filter_df[BumpColumns.bump] > bump_factor].drop_duplicates("ticker", keep="last")[
         [
             "ticker",
-            TickerColumns.date,
-            TickerColumns.close,
-            BumpColumns.origin_date,
-            BumpColumns.origin_value,
             BumpColumns.bump,
+            BumpColumns.origin_date,
+            TickerColumns.date,
+            BumpColumns.origin_value,
+            TickerColumns.close,
         ]
     ]  # type: ignore
 
@@ -61,7 +61,7 @@ def _current_value_df(ticker_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(list(current_values.items()), columns=["ticker", TickerColumns.close])
 
 
-def bump_dataframe(parquet_file: Path, cutoff_year: int = 2020, *, bump_factor_filter: float = 4) -> pd.DataFrame:
+def bump_dataframe(parquet_file: Path, cutoff_year: int = 2020, *, bump_factor_filter: float = 2) -> pd.DataFrame:
     """
     We want to show tables that have had a more than X bump. We want to provide a starting year,
     and based on that find stocks that would have given more than an X times bump.
@@ -86,17 +86,16 @@ def bump_dataframe(parquet_file: Path, cutoff_year: int = 2020, *, bump_factor_f
     hc_two = HistoricalOffsetColumns.two
     hc_five = HistoricalOffsetColumns.five
 
-    bump_factor_fraction = bump_factor_filter - 1
     big_bumps_df = pd.concat(
         [
             _bump_df_filtered_by_bump_factor(
-                bump_df, hc_one.column_name, hc_one.years, bump_factor_fraction, cutoff_year=cutoff_year
+                bump_df, hc_one.column_name, hc_one.years, bump_factor_filter, cutoff_year=cutoff_year
             ),
             _bump_df_filtered_by_bump_factor(
-                bump_df, hc_two.column_name, hc_two.years, bump_factor_fraction, cutoff_year=cutoff_year
+                bump_df, hc_two.column_name, hc_two.years, bump_factor_filter, cutoff_year=cutoff_year
             ),
             _bump_df_filtered_by_bump_factor(
-                bump_df, hc_five.column_name, hc_five.years, bump_factor_fraction, cutoff_year=cutoff_year
+                bump_df, hc_five.column_name, hc_five.years, bump_factor_filter, cutoff_year=cutoff_year
             ),
         ]
     )
@@ -105,5 +104,6 @@ def bump_dataframe(parquet_file: Path, cutoff_year: int = 2020, *, bump_factor_f
     bump_with_current_value_df = big_bumps_df.merge(current_value_df, on="ticker").rename(
         columns={f"{TickerColumns.close}_x": TickerColumns.close, f"{TickerColumns.close}_y": "current_value"}
     )
+    breakpoint()
 
-    return bump_df
+    return bump_with_current_value_df
