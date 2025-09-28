@@ -23,7 +23,7 @@ def get_ticker_df(ticker: str, *, parquet_path: Path = settings.parquet_path) ->
     stored_df = pd.read_parquet(parquet_path)
     historical_change_df = stored_df.loc[stored_df["ticker"] == ticker]
 
-    return historical_change_df
+    return historical_change_df.reset_index(drop=True)
 
 
 def _get_tickers_to_update(tickers: list[str], tickers_df: pd.DataFrame, *, invalidation_ttl_days: int) -> list[str]:
