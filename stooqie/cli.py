@@ -118,4 +118,3 @@ def cli() -> None:
             bump_dashboard(csv_file_path=args.from_csv_file)
         case _:
             stock_app(csv_file_path=args.from_csv_file)
-
