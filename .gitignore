@@ -12,3 +12,7 @@ wheels/
 
 # Temp files
 ToDo.md
+tmp*
+
+# Env files
+.env

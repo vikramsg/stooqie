@@ -111,8 +111,101 @@ class StockPlotApp(App):  # type: ignore
         self.data_table.clear()
 
         df["1Y Change"] = df[TickerColumns.close] - df["offset_one"]
-        df["2Y Change"] = df[TickerColumns.close] - df["offset_five"]
-        df["5Y Change"] = df[TickerColumns.close] - df["offset_ten"]
+        df["2Y Change"] = df[TickerColumns.close] - df["offset_two"]
+        df["5Y Change"] = df[TickerColumns.close] - df["offset_five"]
+        df["Max Change"] = df[TickerColumns.close] - df.loc[0, TickerColumns.close]
+
+        latest_row = df.iloc[-1]
+        self.data_table.add_row(
+            ticker,
+            f"{latest_row['1Y Change']:.2f}",
+            f"{latest_row['2Y Change']:.2f}",
+            f"{latest_row['5Y Change']:.2f}",
+            f"{latest_row['Max Change']:.2f}",
+        )
+
+        self.data_table.refresh()
+
+
+class BumpPlotApp(App):  # type: ignore
+    CSS = """
+    Vertical {
+        align: center top;
+        height: auto;
+    }
+    Horizontal {
+        margin-bottom: 1;
+        height: auto; 
+    }
+
+    PlotextPlot {
+        margin-bottom: 1;  
+    }
+    
+    DataTable {
+        margin-bottom: 1;  
+    }
+    
+    Select {
+        margin: 0;
+    }
+    """  # Without height: auto widgets try to occupy too much space
+
+    BINDINGS: list[BindingType] = [Binding(key="q", action="quit", description="Quit the app")]
+
+    def __init__(self, tickers: list[tuple[str, str]]):
+        super().__init__()
+        self.ticker_select = Select(tickers, prompt="Select a ticker:", id="select_ticker")
+        self.tickers = tickers
+
+    def compose(self) -> ComposeResult:
+        self.plot = PlotextPlot()
+        self.data_table = DataTable()
+
+        yield Vertical(
+            Horizontal(
+                Vertical(Label("Select Ticker:"), self.ticker_select),
+            ),
+            self.plot,
+            self.data_table,
+        )
+        yield Footer()
+
+    async def on_mount(self) -> None:
+        self.data_table.add_columns("Ticker", "1 Year Diff", "2 Year Diff", "5 Year Diff", "Max Diff")
+        # Select the first ticker automatically
+        if self.tickers:
+            await self.update_table(self.tickers[0][1])
+            await self.update_plot(self.tickers[0][1])
+
+    @on(Select.Changed, "#select_ticker")
+    async def ticker_changed(self) -> None:
+        # The value of the select is the ticker_name (the second element of the tuple)
+        ticker_name = self.ticker_select.value
+        await self.update_table(ticker_name)  # type: ignore
+        await self.update_plot(ticker_name)  # type: ignore
+
+    async def update_plot(self, ticker: str) -> None:
+        """Updates only the plot based on the selected duration."""
+        df = get_ticker_df(ticker)
+        df[TickerColumns.date] = pd.to_datetime(df[TickerColumns.date]).dt.strftime("%d/%m/%Y")
+
+        # Use max duration for the bump dashboard
+        plt = self.plot.plt
+        plt.clf()
+        plt.plot(df[TickerColumns.date], df[TickerColumns.close])  # type: ignore
+        plt.title(f"Bump Stock Prices for {ticker} (Max Duration)")
+        self.plot.refresh()
+
+    async def update_table(self, ticker: str) -> None:
+        """Updates only the table when the ticker is changed."""
+        df = get_ticker_df(ticker)
+
+        self.data_table.clear()
+
+        df["1Y Change"] = df[TickerColumns.close] - df["offset_one"]
+        df["2Y Change"] = df[TickerColumns.close] - df["offset_two"]
+        df["5Y Change"] = df[TickerColumns.close] - df["offset_five"]
         df["Max Change"] = df[TickerColumns.close] - df.loc[0, TickerColumns.close]
 
         latest_row = df.iloc[-1]

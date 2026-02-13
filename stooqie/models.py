@@ -26,11 +26,37 @@ class Ticker:
     ticker_name: str
 
 
-class Tickers(Ticker, Enum):
-    apple = ("Apple", "AAPL.US")
-    google = ("Google", "GOOGL.US")
-    amazon = ("Amazon", "AMZN.US")
-    microsoft = ("Microsoft", "MSFT.US")
+@dataclass
+class HistoricalOffsetColumn:
+    """
+    Dataclass to keep track of all historical offset columns we will add to the stocks parquet
+
+    Attributes:
+        column_name: Name of column
+        years: Number of years offset. Note that by offset we always mean going back
+        months: num of months
+        days: num of days
+    """
+
+    column_name: str
+    years: int
+    months: int
+    days: int
+
+
+class HistoricalOffsetColumns(HistoricalOffsetColumn, Enum):
+    """
+    Columns in the Stock that we want to add for doing historical change tracking
+    """
+
+    one = "offset_one", 1, 0, 0
+    two = "offset_two", 2, 0, 0
+    five = "offset_five", 5, 0, 0
+    ten = "offset_ten", 10, 0, 0
+    twenty = "offset_twenty", 20, 0, 0
+
+    def __repr__(self) -> str:
+        return self.value
 
 
 @dataclass

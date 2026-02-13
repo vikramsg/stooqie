@@ -1,48 +1,14 @@
 import logging
-from dataclasses import dataclass
-from enum import Enum
 from io import StringIO
 
 import numpy as np
 import pandas as pd
 import requests
 
-from stooqie.models import TickerColumns
+from stooqie.models import HistoricalOffsetColumns, TickerColumns
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s")
 logger = logging.getLogger()
-
-
-@dataclass
-class HistoricalOffsetColumn:
-    """
-    Dataclass to keep track of all historical offset columns we will add to the stocks parquet
-
-    Attributes:
-        column_name: Name of column
-        years: Number of years offset. Note that by offset we always mean going back
-        months: num of months
-        days: num of days
-    """
-
-    column_name: str
-    years: int
-    months: int
-    days: int
-
-
-class HistoricalOffsetColumns(HistoricalOffsetColumn, Enum):
-    """
-    Columns in the Stock that we want to add for doing historical change tracking
-    """
-
-    one = "offset_one", 1, 0, 0
-    five = "offset_five", 5, 0, 0
-    ten = "offset_ten", 10, 0, 0
-    twenty = "offset_twenty", 20, 0, 0
-
-    def __repr__(self) -> str:
-        return self.value
 
 
 def _get_historical_data(ticker: str) -> pd.DataFrame:
